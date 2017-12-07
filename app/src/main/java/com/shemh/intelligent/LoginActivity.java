@@ -1,6 +1,8 @@
 package com.shemh.intelligent;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -9,10 +11,12 @@ import android.widget.Button;
 import android.widget.RelativeLayout;
 
 import com.shemh.intelligent.utils.AppUtils;
+import com.shemh.intelligent.view.loadingView.LoadingIndicatorView;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener{
 
     RelativeLayout layoutLogin;
+    LoadingIndicatorView loadingIndicatorView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,6 +27,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         layoutLogin = (RelativeLayout) findViewById(R.id.content_login);
         layoutLogin.setPadding(0, AppUtils.getStatusBar(), 0, 0);
 
+        loadingIndicatorView = (LoadingIndicatorView) findViewById(R.id.loadingView);
+
         Button btnLogin = (Button) findViewById(R.id.btn_login);
         btnLogin.setOnClickListener(this);
     }
@@ -31,8 +37,15 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.btn_login://登录
-                ProgressDialog progressDialog = new ProgressDialog(this);
-                progressDialog.show();
+                loadingIndicatorView.setVisibility(View.VISIBLE);
+                loadingIndicatorView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingIndicatorView.setVisibility(View.GONE);
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        startActivity(intent);
+                    }
+                }, 3000);
                 break;
         }
     }

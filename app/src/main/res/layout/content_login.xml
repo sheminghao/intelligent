@@ -90,4 +90,14 @@
 
     </LinearLayout>
 
+    <com.shemh.intelligent.view.loadingView.LoadingIndicatorView
+        android:id="@+id/loadingView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:indicatorName="LineSpinFadeLoaderIndicator"
+        style="@style/LoadingIndicatorView"
+        android:visibility="gone"
+        app:indicatorColor="#ffffff"
+        android:layout_centerInParent="true"/>
+
 </RelativeLayout>
