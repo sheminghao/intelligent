@@ -31,6 +31,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         Button btnLogin = (Button) findViewById(R.id.btn_login);
         btnLogin.setOnClickListener(this);
+
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     @Override
@@ -44,8 +48,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         loadingIndicatorView.setVisibility(View.GONE);
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);
+                        finish();
                     }
-                }, 3000);
+                }, 2000);
                 break;
         }
     }

@@ -6,5 +6,6 @@
     <string name="account">Account</string>
     <string name="password">Password</string>
     <string name="login">Login</string>
+    <string name="press_again_to_quit_app">Press Again To Quit App</string>
 
 </resources>
