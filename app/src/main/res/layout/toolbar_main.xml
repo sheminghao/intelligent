@@ -18,24 +18,38 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="行数"
-            android:textColor="@android:color/white"
+            android:text="@string/row"
             android:textSize="18sp" />
 
         <EditText
-            android:layout_width="100dp"
-            android:layout_height="wrap_content" />
+            android:id="@+id/et_row"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"/>
 
         <TextView
-            android:id="@+id/tv_right"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:text=""
-            android:textSize="16sp"
+            android:text="@string/number"
+            android:textSize="18sp"
             android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_gravity="right" />
+            android:layout_marginRight="10dp" />
+
+        <EditText
+            android:id="@+id/et_num"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"/>
+
+        <TextView
+            android:id="@+id/tv_queding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/confirm"
+            android:textSize="36px"
+            android:textColor="@android:color/white"
+            android:layout_marginLeft="20dp"/>
 
     </android.support.v7.widget.Toolbar>
 
