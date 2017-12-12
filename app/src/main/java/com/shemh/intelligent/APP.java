@@ -1,7 +1,6 @@
 package com.shemh.intelligent;
 
 import android.app.Application;
-import android.widget.ImageView;
 
 /**
  * Created by shemh on 2017/2/17.

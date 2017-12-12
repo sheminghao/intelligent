@@ -1,44 +1,84 @@
 package com.shemh.intelligent;
 
+import android.content.Context;
+import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.shemh.intelligent.adapter.SeatAdapter;
 import com.shemh.intelligent.utils.ToastUtils;
 import com.shemh.intelligent.view.SeatTable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import tw.com.prolific.driver.pl2303.PL2303Driver;
+
 public class MainActivity extends AppCompatActivity {
 
-    List<String> list;
+    List<String> seatList;
     SeatAdapter seatAdapter;
     GridLayoutManager gridLayoutManager;
     public SeatTable seatTableView;
+    @BindView(R.id.recyclerview)
+    RecyclerView recyclerview;
+    @BindView(R.id.spinner_row)
+    Spinner rowSpinner;
+    @BindView(R.id.spinner_num)
+    Spinner numSpinner;
+    @BindView(R.id.spinner_baud_rate)
+    Spinner baudRateSpinner;
+    @BindView(R.id.et_read)
+    EditText etRead;
+    @BindView(R.id.et_write)
+    EditText etWrite;
+
+    List<Integer> seatNumber = new ArrayList<>();
+
+    private static final boolean SHOW_DEBUG = true;
+
+    private static final String ACTION_USB_PERMISSION = "com.shemh.intelligent.USB_PERMISSION";
+
+    //BaudRate.B4800, DataBits.D8, StopBits.S1, Parity.NONE, FlowControl.RTSCTS
+    private PL2303Driver.BaudRate mBaudrate = PL2303Driver.BaudRate.B9600;
+    private PL2303Driver.DataBits mDataBits = PL2303Driver.DataBits.D8;
+    private PL2303Driver.Parity mParity = PL2303Driver.Parity.NONE;
+    private PL2303Driver.StopBits mStopBits = PL2303Driver.StopBits.S1;
+    private PL2303Driver.FlowControl mFlowControl = PL2303Driver.FlowControl.OFF;
+
+    PL2303Driver mSerial;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
 
-        RecyclerView recyclerview = (RecyclerView) findViewById(R.id.recyclerview);
         seatAdapter = new SeatAdapter(this);
         gridLayoutManager = new GridLayoutManager(this, 3);
         recyclerview.setLayoutManager(gridLayoutManager);
         recyclerview.setAdapter(seatAdapter);
 
-        list = new ArrayList<>();
+        seatList = new ArrayList<>();
         for (int i = 0; i < 45; i++) {
-            list.add(i + "");
+            seatList.add(i + "");
         }
-        seatAdapter.setDataList(list);
+        seatAdapter.setDataList(seatList);
 
         final EditText etRow = (EditText) findViewById(R.id.et_row);
         final EditText etNum = (EditText) findViewById(R.id.et_num);
@@ -49,15 +89,325 @@ public class MainActivity extends AppCompatActivity {
                 int row = Integer.parseInt(etRow.getText().toString().trim());
                 int num = Integer.parseInt(etNum.getText().toString().trim());
                 gridLayoutManager.setSpanCount(row);
-                list.clear();
+                seatList.clear();
                 for (int i = 0; i < num; i++) {
-                    list.add(i + "");
+                    seatList.add(i + "");
                 }
-                seatAdapter.setDataList(list);
+                seatAdapter.setDataList(seatList);
             }
         });
 
 
+        initSpinner();
+        initSeatTableView();
+
+        mSerial = new PL2303Driver((UsbManager) getSystemService(Context.USB_SERVICE),
+                this, ACTION_USB_PERMISSION);
+
+        // check USB host function.
+        if (!mSerial.PL2303USBFeatureSupported()) {
+
+            Toast.makeText(this, "No Support USB host API", Toast.LENGTH_SHORT)
+                    .show();
+
+            Log.d("TAG", "No Support USB host API");
+
+            mSerial = null;
+
+        }
+
+        if( !mSerial.enumerate() ) {
+            Toast.makeText(this, "no more devices found", Toast.LENGTH_SHORT).show();
+        }
+
+        try {
+            Thread.sleep(1500);
+            openUsbSerial();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @OnClick({R.id.btn_open, R.id.btn_read, R.id.btn_write})
+    public void onClick(View view){
+        switch (view.getId()){
+            case R.id.btn_open:
+                openUsbSerial();
+                break;
+            case R.id.btn_read:
+                readDataFromSerial();
+                break;
+            case R.id.btn_write:
+                writeDataToSerial();
+                break;
+        }
+    }
+
+    //初始化Spinner
+    private void initSpinner(){
+        //选择座位行数
+        final ArrayAdapter<CharSequence> rowAdapter =
+                ArrayAdapter.createFromResource(this, R.array.seat_row, android.R.layout.select_dialog_item);
+
+        rowSpinner.setAdapter(rowAdapter);
+        rowSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                gridLayoutManager.setSpanCount(Integer.parseInt(rowAdapter.getItem(position).toString()));
+                seatAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        for (int i = 4; i < 60; i++) {
+            seatNumber.add(i);
+        }
+        //选择座位个数
+        final ArrayAdapter<Integer> numAdapter = new ArrayAdapter<>(this,
+                android.R.layout.select_dialog_item, seatNumber);
+
+        numSpinner.setAdapter(numAdapter);
+        numSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                seatList.clear();
+                for (int i = 0; i < numAdapter.getItem(position); i++) {
+                    seatList.add(i + "");
+                }
+                seatAdapter.setDataList(seatList);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+
+        //选择波特率
+        final ArrayAdapter<CharSequence> baudRateAdapter =
+                ArrayAdapter.createFromResource(this, R.array.baud_rate, android.R.layout.select_dialog_item);
+
+        baudRateSpinner.setAdapter(baudRateAdapter);
+        baudRateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(null==mSerial)
+                    return;
+
+                if(!mSerial.isConnected())
+                    return;
+
+                int baudRate=0;
+                String newBaudRate;
+                Toast.makeText(parent.getContext(), "newBaudRate is-" + parent.getItemAtPosition(position).toString(), Toast.LENGTH_LONG).show();
+                newBaudRate= parent.getItemAtPosition(position).toString();
+
+                try	{
+                    baudRate= Integer.parseInt(newBaudRate);
+                }
+                catch (NumberFormatException e)	{
+                    System.out.println(" parse int error!!  " + e);
+                }
+
+                switch (baudRate) {
+                    case 9600:
+                        mBaudrate = PL2303Driver.BaudRate.B9600;
+                        break;
+                    case 19200:
+                        mBaudrate =PL2303Driver.BaudRate.B19200;
+                        break;
+                    case 115200:
+                        mBaudrate =PL2303Driver.BaudRate.B115200;
+                        break;
+                    default:
+                        mBaudrate =PL2303Driver.BaudRate.B9600;
+                        break;
+                }
+
+                int res = 0;
+                try {
+                    res = mSerial.setup(mBaudrate, mDataBits, mStopBits, mParity, mFlowControl);
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+                if( res<0 ) {
+                    Log.d("TAG", "fail to setup");
+                    return;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+    }
+
+    private void writeDataToSerial() {
+
+        Log.d("TAG", "Enter writeDataToSerial");
+
+        if(null==mSerial)
+            return;
+
+        if(!mSerial.isConnected())
+            return;
+
+        String strWrite = etWrite.getText().toString();
+		/*
+        //strWrite="012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+       // strWrite = changeLinefeedcode(strWrite);
+         strWrite="012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+         if (SHOW_DEBUG) {
+            Log.d(TAG, "PL2303Driver Write(" + strWrite.length() + ") : " + strWrite);
+        }
+        int res = mSerial.write(strWrite.getBytes(), strWrite.length());
+		if( res<0 ) {
+			Log.d(TAG, "setup: fail to controlTransfer: "+ res);
+			return;
+		}
+
+		Toast.makeText(this, "Write length: "+strWrite.length()+" bytes", Toast.LENGTH_SHORT).show();
+		 */
+        // test data: 600 byte
+        //strWrite="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        if (SHOW_DEBUG) {
+            Log.d("TAG", "PL2303Driver Write 2(" + strWrite.length() + ") : " + strWrite);
+        }
+        int res = mSerial.write(strWrite.getBytes(), strWrite.length());
+        if( res<0 ) {
+            Log.d("TAG", "setup2: fail to controlTransfer: "+ res);
+            return;
+        }
+
+        Toast.makeText(this, "Write length: "+strWrite.length()+" bytes", Toast.LENGTH_SHORT).show();
+
+        Log.d("TAG", "Leave writeDataToSerial");
+    }
+
+    private void readDataFromSerial() {
+
+        int len;
+        // byte[] rbuf = new byte[4096];
+        byte[] rbuf = new byte[20];
+        StringBuffer sbHex=new StringBuffer();
+
+        Log.d("TAG", "Enter readDataFromSerial");
+
+        if(null==mSerial)
+            return;
+
+        if(!mSerial.isConnected())
+            return;
+
+        len = mSerial.read(rbuf);
+        if(len<0) {
+            Log.d("TAG", "Fail to bulkTransfer(read data)");
+            return;
+        }
+
+        if (len > 0) {
+            if (SHOW_DEBUG) {
+                Log.d("TAG", "read len : " + len);
+            }
+            //rbuf[len] = 0;
+            for (int j = 0; j < len; j++) {
+                //String temp=Integer.toHexString(rbuf[j]&0x000000FF);
+                //Log.i(TAG, "str_rbuf["+j+"]="+temp);
+                //int decimal = Integer.parseInt(temp, 16);
+                //Log.i(TAG, "dec["+j+"]="+decimal);
+                //sbHex.append((char)decimal);
+                //sbHex.append(temp);
+                sbHex.append((char) (rbuf[j]&0x000000FF));
+            }
+            etRead.setText(sbHex.toString());
+            Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
+        }
+        else {
+            if (SHOW_DEBUG) {
+                Log.d("TAG", "read len : 0 ");
+            }
+            etRead.setText("empty");
+            return;
+        }
+
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Log.d("TAG", "Leave readDataFromSerial");
+    }
+
+    private void openUsbSerial() {
+        Log.d("TAG", "Enter  openUsbSerial");
+
+        if(mSerial==null) {
+
+            Log.d("TAG", "No mSerial");
+            return;
+
+        }
+
+
+        if (mSerial.isConnected()) {
+            if (SHOW_DEBUG) {
+                Log.d("TAG", "openUsbSerial : isConnected ");
+            }
+            String str = baudRateSpinner.getSelectedItem().toString();
+            int baudRate= Integer.parseInt(str);
+            switch (baudRate) {
+                case 9600:
+                    mBaudrate = PL2303Driver.BaudRate.B9600;
+                    break;
+                case 19200:
+                    mBaudrate =PL2303Driver.BaudRate.B19200;
+                    break;
+                case 115200:
+                    mBaudrate =PL2303Driver.BaudRate.B115200;
+                    break;
+                default:
+                    mBaudrate =PL2303Driver.BaudRate.B9600;
+                    break;
+            }
+            Log.d("TAG", "baudRate:"+baudRate);
+            // if (!mSerial.InitByBaudRate(mBaudrate)) {
+            if (!mSerial.InitByBaudRate(mBaudrate,700)) {
+                if(!mSerial.PL2303Device_IsHasPermission()) {
+                    Toast.makeText(this, "cannot open, maybe no permission", Toast.LENGTH_SHORT).show();
+                }
+
+                if(mSerial.PL2303Device_IsHasPermission() && (!mSerial.PL2303Device_IsSupportChip())) {
+                    Toast.makeText(this, "cannot open, maybe this chip has no support, please use PL2303HXD / RA / EA chip.", Toast.LENGTH_SHORT).show();
+                    Log.d("TAG", "cannot open, maybe this chip has no support, please use PL2303HXD / RA / EA chip.");
+                }
+            } else {
+
+                Toast.makeText(this, "connected : OK" , Toast.LENGTH_SHORT).show();
+                Log.d("TAG", "connected : OK");
+                Log.d("TAG", "Exit  openUsbSerial");
+
+
+            }
+        }//isConnected
+        else {
+            Toast.makeText(this, "Connected failed, Please plug in PL2303 cable again!" , Toast.LENGTH_SHORT).show();
+            Log.d("TAG", "connected failed, Please plug in PL2303 cable again!");
+
+
+        }
+    }
+
+    //电影票选座空间（测试）
+    private void initSeatTableView(){
         seatTableView = (SeatTable) findViewById(R.id.seatView);
         seatTableView.setScreenName("8号厅荧幕");//设置屏幕名称
         seatTableView.setMaxSelected(3);//设置最多选中
