@@ -335,16 +335,22 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("TAG", "------type, " + type);
                 switch (type){
                     case 0xE4://设置主机恢复出厂设置
+                        Log.i("TAG", "------设置主机恢复出厂设置, " + type);
                         break;
                     case 0xEA://设置主机进入注册状态
+                        Log.i("TAG", "------设置主机进入注册状态, " + type);
                         break;
                     case 0xEB://设置主机退出注册状态
+                        Log.i("TAG", "------设置主机退出注册状态, " + type);
                         break;
                     case 0xE3://获取注册设备数量
+                        Log.i("TAG", "------获取注册设备数量, " + type);
                         break;
                     case 0xE2://获取设备ID及状态
+                        Log.i("TAG", "------获取设备ID及状态, " + type);
                         break;
                     case 0xE1://清除注册表
+                        Log.i("TAG", "------清除注册表, " + type);
                         break;
                 }
             }
