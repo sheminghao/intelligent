@@ -329,6 +329,25 @@ public class MainActivity extends AppCompatActivity {
             }
             etRead.setText(sbHex.toString());
             Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
+
+            if (len > 8){
+                char type = (char)(rbuf[8]&0x000000FF);
+                Log.i("TAG", "------type, " + type);
+                switch (type){
+                    case 0xE4://设置主机恢复出厂设置
+                        break;
+                    case 0xEA://设置主机进入注册状态
+                        break;
+                    case 0xEB://设置主机退出注册状态
+                        break;
+                    case 0xE3://获取注册设备数量
+                        break;
+                    case 0xE2://获取设备ID及状态
+                        break;
+                    case 0xE1://清除注册表
+                        break;
+                }
+            }
         }
         else {
             if (SHOW_DEBUG) {
@@ -356,7 +375,6 @@ public class MainActivity extends AppCompatActivity {
             return;
 
         }
-
 
         if (mSerial.isConnected()) {
             if (SHOW_DEBUG) {
