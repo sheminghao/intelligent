@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import com.shemh.intelligent.adapter.SeatAdapter;
 import com.shemh.intelligent.utils.ToastUtils;
+import com.shemh.intelligent.utils.ZhuanHuanUtils;
 import com.shemh.intelligent.view.SeatTable;
 
 import java.io.IOException;
@@ -325,9 +326,12 @@ public class MainActivity extends AppCompatActivity {
                 //Log.i(TAG, "dec["+j+"]="+decimal);
                 //sbHex.append((char)decimal);
                 //sbHex.append(temp);
-                sbHex.append((char) (rbuf[j]&0x000000FF));
+//                sbHex.append((char) (rbuf[j]&0x000000FF));
+                sbHex.append(rbuf[j]);
             }
-            etRead.setText(sbHex.toString());
+
+            String r = ZhuanHuanUtils.byte2HexStr(rbuf);
+            etRead.setText(r);
             Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
 
             if (len > 8){
