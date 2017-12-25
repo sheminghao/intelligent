@@ -249,6 +249,16 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+        //读取数据
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true){
+                    readDataFromSerial();
+                }
+            }
+        }).start();
     }
 
     private void writeDataToSerial() {
@@ -330,9 +340,20 @@ public class MainActivity extends AppCompatActivity {
                 sbHex.append(rbuf[j]);
             }
 
-            String r = ZhuanHuanUtils.byte2HexStr(rbuf);
-            etRead.setText(r);
-            Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
+            byte[] rb = new byte[len];
+            for (int i = 0; i < len; i++) {
+                rb[i] = rbuf[i];
+            }
+
+            String r = ZhuanHuanUtils.byte2HexStr(rb);
+            Log.i("TAG", "------rb, " + r);
+            etRead.post(new Runnable() {
+                @Override
+                public void run() {
+                    etRead.setText("empty");
+                }
+            });
+//            Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
 
             if (len > 8){
                 char type = (char)(rbuf[8]&0x000000FF);
@@ -363,12 +384,17 @@ public class MainActivity extends AppCompatActivity {
             if (SHOW_DEBUG) {
                 Log.d("TAG", "read len : 0 ");
             }
-            etRead.setText("empty");
+            etRead.post(new Runnable() {
+                @Override
+                public void run() {
+                    etRead.setText("empty");
+                }
+            });
             return;
         }
 
         try {
-            Thread.sleep(50);
+            Thread.sleep(90);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -434,6 +460,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private long exitTime = 0;
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN){
+            if((System.currentTimeMillis() - exitTime) > 2000){
+                ToastUtils.showToast(R.string.press_again_to_quit_app);
+                exitTime = System.currentTimeMillis();
+            } else {
+                finish();
+                AppManager.getAppManager().AppExit(MainActivity.this);
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
     //电影票选座空间（测试）
     private void initSeatTableView(){
         seatTableView = (SeatTable) findViewById(R.id.seatView);
@@ -475,21 +517,5 @@ public class MainActivity extends AppCompatActivity {
 
         });
         seatTableView.setData(10,15);
-    }
-
-    private long exitTime = 0;
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN){
-            if((System.currentTimeMillis() - exitTime) > 2000){
-                ToastUtils.showToast(R.string.press_again_to_quit_app);
-                exitTime = System.currentTimeMillis();
-            } else {
-                finish();
-                AppManager.getAppManager().AppExit(MainActivity.this);
-            }
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
     }
 }
