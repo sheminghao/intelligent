@@ -392,26 +392,21 @@ public class MainActivity extends AppCompatActivity {
             });
             return;
         }
-
         try {
             Thread.sleep(90);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
         Log.d("TAG", "Leave readDataFromSerial");
     }
-
     private void openUsbSerial() {
         Log.d("TAG", "Enter  openUsbSerial");
-
         if(mSerial==null) {
 
             Log.d("TAG", "No mSerial");
             return;
 
         }
-
         if (mSerial.isConnected()) {
             if (SHOW_DEBUG) {
                 Log.d("TAG", "openUsbSerial : isConnected ");
@@ -438,27 +433,111 @@ public class MainActivity extends AppCompatActivity {
                 if(!mSerial.PL2303Device_IsHasPermission()) {
                     Toast.makeText(this, "cannot open, maybe no permission", Toast.LENGTH_SHORT).show();
                 }
-
                 if(mSerial.PL2303Device_IsHasPermission() && (!mSerial.PL2303Device_IsSupportChip())) {
                     Toast.makeText(this, "cannot open, maybe this chip has no support, please use PL2303HXD / RA / EA chip.", Toast.LENGTH_SHORT).show();
                     Log.d("TAG", "cannot open, maybe this chip has no support, please use PL2303HXD / RA / EA chip.");
                 }
             } else {
-
                 Toast.makeText(this, "connected : OK" , Toast.LENGTH_SHORT).show();
                 Log.d("TAG", "connected : OK");
                 Log.d("TAG", "Exit  openUsbSerial");
-
-
             }
         }//isConnected
         else {
             Toast.makeText(this, "Connected failed, Please plug in PL2303 cable again!" , Toast.LENGTH_SHORT).show();
             Log.d("TAG", "connected failed, Please plug in PL2303 cable again!");
-
-
         }
     }
+
+    List<String> chuankou = new ArrayList<>();
+    //逐个字节读取数据
+    private void readDataFromSerial1() {
+
+        int len;
+        byte[] rbuf = new byte[1];
+        Log.d("TAG", "Enter readDataFromSerial1");
+
+        if(null==mSerial)
+            return;
+
+        if(!mSerial.isConnected())
+            return;
+
+        len = mSerial.read(rbuf);
+        if(len<0) {
+            Log.d("TAG", "Fail to bulkTransfer(read data)");
+            return;
+        }
+
+        if (len > 0) {
+            if (SHOW_DEBUG) {
+                Log.d("TAG", "read len : " + len);
+            }
+
+            if (rbuf[0] == 0xF5) {
+                //如果读的字节是0xF5，而且串口列表中有数据，且最后一个为0xFE，则清除上一串数据
+                if (chuankou.size() > 0 && "FE".equals(chuankou.get(chuankou.size() - 1))) {
+                    chuankou.clear();
+                }
+            }
+            //将串口数据加入list集合中
+            chuankou.add(ZhuanHuanUtils.byte2HexStr(rbuf));
+
+            if (rbuf[0] == 0xFE) {
+                //如果读的字节是0xFE,而且数据列表的长度与数据长度一致，则数据包发送完成
+                if (chuankou.size() >= 2) {
+                    int singleCount = Integer.parseInt(ZhuanHuanUtils.hexStr2Str(chuankou.get(1)));
+                    if (singleCount + 2 == chuankou.size()) {
+                        StringBuffer sbHex = new StringBuffer();
+                        for (int i = 0; i < chuankou.size(); i++) {
+                            sbHex.append(chuankou.get(i));
+                        }
+                        if (chuankou.size() > 8){
+                            String type = chuankou.get(8);
+                            Log.i("TAG", "------type, " + type);
+                            if ("E4".equals(type)){
+                                Log.i("TAG", "------设置主机恢复出厂设置, " + type);
+                            }else if ("EA".equals(type)){
+                                Log.i("TAG", "------设置主机进入注册状态, " + type);
+                            }else if ("EB".equals(type)){
+                                Log.i("TAG", "------设置主机退出注册状态, " + type);
+                            }else if ("E3".equals(type)){
+                                Log.i("TAG", "------获取注册设备数量, " + type);
+                            }else if ("E2".equals(type)){
+                                Log.i("TAG", "------获取设备ID及状态, " + type);
+                            }else if ("E1".equals(type)){
+                                Log.i("TAG", "------清除注册表, " + type);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+//            Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
+
+
+        else {
+            if (SHOW_DEBUG) {
+                Log.d("TAG", "read len : 0 ");
+            }
+            etRead.post(new Runnable() {
+                @Override
+                public void run() {
+                    etRead.setText("empty");
+                }
+            });
+            return;
+        }
+
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Log.d("TAG", "Leave readDataFromSerial");
+    }
+
 
     private long exitTime = 0;
     @Override
