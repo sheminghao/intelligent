@@ -3,6 +3,7 @@ package com.shemh.intelligent;
 import android.content.Context;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -250,19 +251,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //读取数据
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    readDataFromSerial1();
-                    try {
-                        Thread.sleep(300);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                while (true) {
+//                    readDataFromSerial1();
+//                }
+//            }
+//        }).start();
+        handler.postDelayed(runnable, TIME);
     }
 
     private void writeDataToSerial() {
@@ -453,6 +450,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private int TIME = 200;  //每隔200ms执行一次.
+
+    private Handler handler = new Handler();
+
+    Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                readDataFromSerial1();
+                handler.postDelayed(this, TIME);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
     List<String> chuankou = new ArrayList<>();
 
     //逐个字节读取数据
@@ -460,7 +473,7 @@ public class MainActivity extends AppCompatActivity {
 
         int len;
         byte[] rbuf = new byte[1];
-        Log.d("TAG", "Enter readDataFromSerial1");
+        Log.d("TAG", "------Enter readDataFromSerial1");
 
         if (null == mSerial)
             return;
