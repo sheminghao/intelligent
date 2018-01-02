@@ -25,7 +25,10 @@
             android:id="@+id/spinner_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:drawable/btn_dropdown" />
+            android:background="@android:drawable/btn_dropdown"
+            android:backgroundTint="#ffffff"
+            android:popupBackground="#ffffff"
+            android:dropDownWidth="100dp"/>
 
         <EditText
             android:id="@+id/et_row"
@@ -54,7 +57,10 @@
             android:id="@+id/spinner_num"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:drawable/btn_dropdown" />
+            android:background="@android:drawable/btn_dropdown"
+            android:backgroundTint="#ffffff"
+            android:popupBackground="#ffffff"
+            android:dropDownWidth="100dp"/>
         <TextView
             android:id="@+id/tv_queding"
             android:layout_width="wrap_content"

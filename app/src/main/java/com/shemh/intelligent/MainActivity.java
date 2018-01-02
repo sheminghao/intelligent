@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.shemh.intelligent.adapter.SeatAdapter;
+import com.shemh.intelligent.utils.ParseDataUtils;
 import com.shemh.intelligent.utils.ToastUtils;
 import com.shemh.intelligent.utils.ZhuanHuanUtils;
 import com.shemh.intelligent.view.SeatTable;
@@ -31,9 +33,11 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import tw.com.prolific.driver.pl2303.PL2303Driver;
 
+import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+
 public class MainActivity extends AppCompatActivity {
 
-    List<String> seatList;
+    List<String> seatList = new ArrayList<>();
     SeatAdapter seatAdapter;
     GridLayoutManager gridLayoutManager;
     public SeatTable seatTableView;
@@ -70,13 +74,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        getWindow().addFlags(FLAG_KEEP_SCREEN_ON);
 
         seatAdapter = new SeatAdapter(this);
         gridLayoutManager = new GridLayoutManager(this, 3);
         recyclerview.setLayoutManager(gridLayoutManager);
         recyclerview.setAdapter(seatAdapter);
 
-        seatList = new ArrayList<>();
         for (int i = 0; i < 45; i++) {
             seatList.add(i + "");
         }
@@ -96,6 +100,17 @@ public class MainActivity extends AppCompatActivity {
                     seatList.add(i + "");
                 }
                 seatAdapter.setDataList(seatList);
+            }
+        });
+
+        seatAdapter.setOnItemClickListener(new SeatAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int pos) {
+                if (pos == 0) {
+                    writeDataToSerial1(ParseDataUtils.zhuceZhuangtai);
+                }else if(pos == 1){
+                    writeDataToSerial1(ParseDataUtils.huoquShebeiZhuangtai);
+                }
             }
         });
 
@@ -123,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            Thread.sleep(500);
+            Thread.sleep(200);
             openUsbSerial();
         } catch (Exception e) {
             e.printStackTrace();
@@ -149,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
     private void initSpinner() {
         //选择座位行数
         final ArrayAdapter<CharSequence> rowAdapter =
-                ArrayAdapter.createFromResource(this, R.array.seat_row, android.R.layout.select_dialog_item);
+                ArrayAdapter.createFromResource(this, R.array.seat_row, android.R.layout.simple_list_item_1);
 
         rowSpinner.setAdapter(rowAdapter);
         rowSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -251,14 +266,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //读取数据
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                while (true) {
-//                    readDataFromSerial1();
-//                }
-//            }
-//        }).start();
         handler.postDelayed(runnable, TIME);
     }
 
@@ -300,6 +307,34 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Toast.makeText(this, "Write length: " + strWrite.length() + " bytes", Toast.LENGTH_SHORT).show();
+
+        Log.d("TAG", "Leave writeDataToSerial");
+    }
+
+    private void writeDataToSerial1(byte[] writeByte) {
+
+        Log.d("TAG", "Enter writeDataToSerial1");
+
+        if (null == writeByte || writeByte.length == 0){
+            return;
+        }
+
+        if (null == mSerial)
+            return;
+
+        if (!mSerial.isConnected())
+            return;
+
+        if (SHOW_DEBUG) {
+            Log.d("TAG", "PL2303Driver Write 2(" + writeByte.length + ") : " + writeByte);
+        }
+        int res = mSerial.write(writeByte, writeByte.length);
+        if (res < 0) {
+            Log.d("TAG", "setup2: fail to controlTransfer: " + res);
+            return;
+        }
+
+        Toast.makeText(this, "Write length: " + writeByte.length + " bytes", Toast.LENGTH_SHORT).show();
 
         Log.d("TAG", "Leave writeDataToSerial");
     }
@@ -368,6 +403,9 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 0xEB://设置主机退出注册状态
                         Log.i("TAG", "------设置主机退出注册状态, " + type);
+                        break;
+                    case 0xEC://注册设备
+                        Log.i("TAG", "------注册设备, " + type);
                         break;
                     case 0xE3://获取注册设备数量
                         Log.i("TAG", "------获取注册设备数量, " + type);
@@ -450,9 +488,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private int TIME = 200;  //每隔200ms执行一次.
+    private int TIME = 20;  //每隔200ms执行一次.
 
-    private Handler handler = new Handler();
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case 0:
+                    seatAdapter.setDataList(seatList);
+                    seatAdapter.notifyItemChanged(0);
+                    break;
+            }
+        }
+    };
 
     Runnable runnable = new Runnable() {
         @Override
@@ -473,7 +522,7 @@ public class MainActivity extends AppCompatActivity {
 
         int len;
         byte[] rbuf = new byte[1];
-        Log.d("TAG", "------Enter readDataFromSerial1");
+//        Log.d("TAG", "------Enter readDataFromSerial1");
 
         if (null == mSerial)
             return;
@@ -527,6 +576,16 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i("TAG", "------获取设备ID及状态, " + type);
                             } else if ("E1".equals(type)) {
                                 Log.i("TAG", "------清除注册表, " + type);
+                            }else if ("A1".equals(type)) {
+                                Log.i("TAG", "------触发开关上报数据状态（开关发送）, " + type);
+                                seatList.set(0, sbHex.toString());
+                                handler.sendEmptyMessage(0);
+                            }else if ("A2".equals(type)) {
+                                Log.i("TAG", "------开关上报电量状态（开关发送）, " + type);
+                            }else if ("A3".equals(type)) {
+                                Log.i("TAG", "------查询开关状态（模块发送，开关返回）, " + type);
+                            }else if ("A4".equals(type)) {
+                                Log.i("TAG", "------开关操作（模块发送，开关返回）, " + type);
                             }
                         }
                     }
