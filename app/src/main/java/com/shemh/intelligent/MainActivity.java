@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.shemh.intelligent.adapter.SeatAdapter;
+import com.shemh.intelligent.bean.DeviceInfoBean;
 import com.shemh.intelligent.utils.ParseDataUtils;
 import com.shemh.intelligent.utils.ToastUtils;
 import com.shemh.intelligent.utils.ZhuanHuanUtils;
@@ -37,7 +38,7 @@ import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 
 public class MainActivity extends AppCompatActivity {
 
-    List<String> seatList = new ArrayList<>();
+    List<DeviceInfoBean> seatList = new ArrayList<>();
     SeatAdapter seatAdapter;
     GridLayoutManager gridLayoutManager;
     public SeatTable seatTableView;
@@ -82,7 +83,9 @@ public class MainActivity extends AppCompatActivity {
         recyclerview.setAdapter(seatAdapter);
 
         for (int i = 0; i < 45; i++) {
-            seatList.add(i + "");
+            DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
+            deviceInfoBean.setDeviceId(i + "");
+            seatList.add(deviceInfoBean);
         }
         seatAdapter.setDataList(seatList);
 
@@ -97,7 +100,9 @@ public class MainActivity extends AppCompatActivity {
                 gridLayoutManager.setSpanCount(row);
                 seatList.clear();
                 for (int i = 0; i < num; i++) {
-                    seatList.add(i + "");
+                    DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
+                    deviceInfoBean.setDeviceId(i + "");
+                    seatList.add(deviceInfoBean);
                 }
                 seatAdapter.setDataList(seatList);
             }
@@ -193,7 +198,9 @@ public class MainActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 seatList.clear();
                 for (int i = 0; i < numAdapter.getItem(position); i++) {
-                    seatList.add(i + "");
+                    DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
+                    deviceInfoBean.setDeviceId(i + "");
+                    seatList.add(deviceInfoBean);
                 }
                 seatAdapter.setDataList(seatList);
             }
@@ -494,12 +501,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            switch (msg.what){
-                case 0:
-                    seatAdapter.setDataList(seatList);
-                    seatAdapter.notifyItemChanged(0);
-                    break;
-            }
+            seatAdapter.setDataList(seatList);
+            seatAdapter.notifyItemChanged(msg.what);
         }
     };
 
@@ -555,6 +558,9 @@ public class MainActivity extends AppCompatActivity {
                 if (chuankou.size() >= 2) {
 //                    Log.d("TAG", "chuankou.get(1) : " + Integer.parseInt(chuankou.get(1), 16));
                     int singleCount = Integer.parseInt(chuankou.get(1), 16);
+                    if ("EA".equals(chuankou.get(8))){
+                        singleCount = singleCount - 1;
+                    }
                     if (singleCount + 2 == chuankou.size()) {
                         StringBuffer sbHex = new StringBuffer();
                         for (int i = 0; i < chuankou.size(); i++) {
@@ -568,6 +574,20 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i("TAG", "------设置主机恢复出厂设置, " + type);
                             } else if ("EA".equals(type)) {
                                 Log.i("TAG", "------设置主机进入注册状态, " + type);
+                                int msg = -1;
+                                for (int i = 0; i < seatList.size(); i++) {
+                                    if (seatList.get(i).getDeviceId().length() >=6 &&
+                                            seatList.get(i).equals(sbHex.toString().substring(22, 28))){
+                                        msg = i;
+                                    }
+                                }
+                                if (msg == -1) {
+                                    DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
+                                    deviceInfoBean.setDeviceId(sbHex.toString().substring(22, 28));
+                                    seatList.add(deviceInfoBean);
+                                    msg = seatList.size() - 1;
+                                }
+                                handler.sendEmptyMessage(msg);
                             } else if ("EB".equals(type)) {
                                 Log.i("TAG", "------设置主机退出注册状态, " + type);
                             } else if ("E3".equals(type)) {
@@ -578,8 +598,19 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i("TAG", "------清除注册表, " + type);
                             }else if ("A1".equals(type)) {
                                 Log.i("TAG", "------触发开关上报数据状态（开关发送）, " + type);
-                                seatList.set(0, sbHex.toString());
-                                handler.sendEmptyMessage(0);
+                                int msg = 0;
+                                for (int i = 0; i < seatList.size(); i++) {
+                                    if (seatList.get(i).getDeviceId().length() >=6 &&
+                                            seatList.get(i).getDeviceId().equals(sbHex.toString().substring(10, 16))){
+                                        Log.i("TAG", "------sbHex.toString().substring(10, 16)" + sbHex.toString().substring(10, 16));
+                                        Log.i("TAG", "------DeviceId" + seatList.get(i).getDeviceId());
+                                        Log.i("TAG", "------sbHex.toString().substring(20, 22)" + sbHex.toString().substring(20, 22));
+                                        Log.i("TAG", "------i" + i);
+                                        seatList.get(i).setSeatState(sbHex.toString().substring(20, 22));
+                                        msg = i;
+                                    }
+                                }
+                                handler.sendEmptyMessage(msg);
                             }else if ("A2".equals(type)) {
                                 Log.i("TAG", "------开关上报电量状态（开关发送）, " + type);
                             }else if ("A3".equals(type)) {

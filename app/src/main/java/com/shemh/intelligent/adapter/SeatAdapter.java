@@ -1,6 +1,7 @@
 package com.shemh.intelligent.adapter;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
@@ -8,13 +9,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.shemh.intelligent.R;
+import com.shemh.intelligent.bean.DeviceInfoBean;
 import com.shemh.intelligent.utils.ToastUtils;
 
 /**
  * Created by shemh on 2017/12/7.
  */
 
-public class SeatAdapter extends ListBaseAdapter<String> {
+public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
 
     public SeatAdapter(Context context) {
         super(context);
@@ -40,10 +42,10 @@ public class SeatAdapter extends ListBaseAdapter<String> {
             }
         });
 
-        if (mDataList.get(position).length() > 10){
-            if ("00".equals(mDataList.get(position).substring(20, 22))){
+        if (!TextUtils.isEmpty(mDataList.get(position).getSeatState())){
+            if ("00".equals(mDataList.get(position).getSeatState())){
                 imgSeat.setImageResource(R.mipmap.zuowei_lv);
-            }else if ("01".equals(mDataList.get(position).substring(20, 22))){
+            }else if ("01".equals(mDataList.get(position).getSeatState())){
                 imgSeat.setImageResource(R.mipmap.zuowei_hong);
             }
         }
