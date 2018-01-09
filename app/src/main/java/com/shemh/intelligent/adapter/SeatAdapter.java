@@ -3,14 +3,12 @@ package com.shemh.intelligent.adapter;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.shemh.intelligent.R;
 import com.shemh.intelligent.bean.DeviceInfoBean;
-import com.shemh.intelligent.utils.ToastUtils;
 
 /**
  * Created by shemh on 2017/12/7.
@@ -31,7 +29,14 @@ public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
     public void onBindItemHolder(SuperViewHolder holder, final int position) {
         ImageView imgSeat = holder.getView(R.id.img_seat);
         TextView tvSeatNum = holder.getView(R.id.tv_seat_num);
-        tvSeatNum.setText(position+"");
+        TextView tvRegisterState = holder.getView(R.id.tv_register_state);
+        if (TextUtils.isEmpty(mDataList.get(position).getDeviceId())){
+            tvRegisterState.setVisibility(View.VISIBLE);
+        }else {
+            tvRegisterState.setVisibility(View.INVISIBLE);
+        }
+
+        tvSeatNum.setText(position+1+"");
         LinearLayout layoutSeat = holder.getView(R.id.layout_seat);
         layoutSeat.setOnClickListener(new View.OnClickListener() {
             @Override

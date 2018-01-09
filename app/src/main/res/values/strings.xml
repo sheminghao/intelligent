@@ -8,6 +8,7 @@
     <string name="row">Row</string>
     <string name="number">Number</string>
     <string name="confirm">Confirm</string>
+    <string name="reset">Reset</string>
     <string name="baud_rate">Baud rate</string>
     <string name="open">Open</string>
     <string name="read">Read</string>

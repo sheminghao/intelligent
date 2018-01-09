@@ -8,6 +8,14 @@
     android:paddingBottom="10dp"
     android:id="@+id/layout_seat">
 
+    <TextView
+        android:id="@+id/tv_register_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="未注册"
+        android:textSize="10sp"
+        android:layout_marginBottom="5dp" />
+
     <ImageView
         android:id="@+id/img_seat"
         android:layout_width="wrap_content"

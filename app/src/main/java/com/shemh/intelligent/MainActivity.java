@@ -8,6 +8,7 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -20,7 +21,9 @@ import android.widget.Toast;
 
 import com.shemh.intelligent.adapter.SeatAdapter;
 import com.shemh.intelligent.bean.DeviceInfoBean;
+import com.shemh.intelligent.utils.DeviceInfoData;
 import com.shemh.intelligent.utils.ParseDataUtils;
+import com.shemh.intelligent.utils.PreferencesUtils;
 import com.shemh.intelligent.utils.ToastUtils;
 import com.shemh.intelligent.utils.ZhuanHuanUtils;
 import com.shemh.intelligent.view.SeatTable;
@@ -57,6 +60,14 @@ public class MainActivity extends AppCompatActivity {
 
     List<Integer> seatNumber = new ArrayList<>();
 
+    private int row = 2;
+    private int num = 4;
+
+    /**
+     * 点击的座位索引
+     */
+    private int clickPosition = -1;
+
     private static final boolean SHOW_DEBUG = true;
 
     private static final String ACTION_USB_PERMISSION = "com.shemh.intelligent.USB_PERMISSION";
@@ -78,50 +89,53 @@ public class MainActivity extends AppCompatActivity {
         getWindow().addFlags(FLAG_KEEP_SCREEN_ON);
 
         seatAdapter = new SeatAdapter(this);
-        gridLayoutManager = new GridLayoutManager(this, 3);
+        gridLayoutManager = new GridLayoutManager(this, 2);
         recyclerview.setLayoutManager(gridLayoutManager);
         recyclerview.setAdapter(seatAdapter);
 
-        for (int i = 0; i < 45; i++) {
-            DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
-            deviceInfoBean.setDeviceId(i + "");
-            seatList.add(deviceInfoBean);
+        initSpinner();
+
+        if(null != DeviceInfoData.getDeviceInfo()){
+            seatList = DeviceInfoData.getDeviceInfo().getDeviceInfoList();
+            row = DeviceInfoData.getDeviceInfo().getRow();
+            num = DeviceInfoData.getDeviceInfo().getNum();
+        }else {
+            for (int i = 0; i < num; i++) {
+                DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
+                deviceInfoBean.setDeviceId(i + "");
+                seatList.add(deviceInfoBean);
+            }
+            DeviceInfoData.saveDeviceInfo(seatList);
         }
         seatAdapter.setDataList(seatList);
 
-        final EditText etRow = (EditText) findViewById(R.id.et_row);
-        final EditText etNum = (EditText) findViewById(R.id.et_num);
         TextView tvQueding = (TextView) findViewById(R.id.tv_queding);
         tvQueding.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int row = Integer.parseInt(etRow.getText().toString().trim());
-                int num = Integer.parseInt(etNum.getText().toString().trim());
                 gridLayoutManager.setSpanCount(row);
                 seatList.clear();
                 for (int i = 0; i < num; i++) {
                     DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
-                    deviceInfoBean.setDeviceId(i + "");
+                    deviceInfoBean.setDeviceId("");
                     seatList.add(deviceInfoBean);
                 }
                 seatAdapter.setDataList(seatList);
+                DeviceInfoData.saveDeviceInfo(seatList);
             }
         });
 
         seatAdapter.setOnItemClickListener(new SeatAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(int pos) {
-                if (pos == 0) {
+                if (TextUtils.isEmpty(seatAdapter.getDataList().get(pos).getDeviceId())) {
+                    clickPosition = pos;
                     writeDataToSerial1(ParseDataUtils.zhuceZhuangtai);
-                }else if(pos == 1){
-                    writeDataToSerial1(ParseDataUtils.huoquShebeiZhuangtai);
                 }
             }
         });
 
-
-        initSpinner();
-        initSeatTableView();
+//        initSeatTableView();
 
         mSerial = new PL2303Driver((UsbManager) getSystemService(Context.USB_SERVICE),
                 this, ACTION_USB_PERMISSION);
@@ -175,8 +189,7 @@ public class MainActivity extends AppCompatActivity {
         rowSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                gridLayoutManager.setSpanCount(Integer.parseInt(rowAdapter.getItem(position).toString()));
-                seatAdapter.notifyDataSetChanged();
+                row = Integer.parseInt(rowAdapter.getItem(position).toString());
             }
 
             @Override
@@ -196,21 +209,13 @@ public class MainActivity extends AppCompatActivity {
         numSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                seatList.clear();
-                for (int i = 0; i < numAdapter.getItem(position); i++) {
-                    DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
-                    deviceInfoBean.setDeviceId(i + "");
-                    seatList.add(deviceInfoBean);
-                }
-                seatAdapter.setDataList(seatList);
+                num = numAdapter.getItem(position);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-
             }
         });
-
 
         //选择波特率
         final ArrayAdapter<CharSequence> baudRateAdapter =
@@ -346,105 +351,6 @@ public class MainActivity extends AppCompatActivity {
         Log.d("TAG", "Leave writeDataToSerial");
     }
 
-    private void readDataFromSerial() {
-
-        int len;
-        // byte[] rbuf = new byte[4096];
-        byte[] rbuf = new byte[20];
-        StringBuffer sbHex = new StringBuffer();
-
-        Log.d("TAG", "Enter readDataFromSerial");
-
-        if (null == mSerial)
-            return;
-
-        if (!mSerial.isConnected())
-            return;
-
-        len = mSerial.read(rbuf);
-        if (len < 0) {
-            Log.d("TAG", "Fail to bulkTransfer(read data)");
-            return;
-        }
-
-        if (len > 0) {
-            if (SHOW_DEBUG) {
-                Log.d("TAG", "read len : " + len);
-            }
-            //rbuf[len] = 0;
-            for (int j = 0; j < len; j++) {
-                //String temp=Integer.toHexString(rbuf[j]&0x000000FF);
-                //Log.i(TAG, "str_rbuf["+j+"]="+temp);
-                //int decimal = Integer.parseInt(temp, 16);
-                //Log.i(TAG, "dec["+j+"]="+decimal);
-                //sbHex.append((char)decimal);
-                //sbHex.append(temp);
-//                sbHex.append((char) (rbuf[j]&0x000000FF));
-                sbHex.append(rbuf[j]);
-            }
-
-            byte[] rb = new byte[len];
-            for (int i = 0; i < len; i++) {
-                rb[i] = rbuf[i];
-            }
-
-            String r = ZhuanHuanUtils.byte2HexStr(rb);
-            Log.i("TAG", "------rb, " + r);
-            etRead.post(new Runnable() {
-                @Override
-                public void run() {
-                    etRead.setText("empty");
-                }
-            });
-//            Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
-
-            if (len > 8) {
-                char type = (char) (rbuf[8] & 0x000000FF);
-                Log.i("TAG", "------type, " + type);
-                switch (type) {
-                    case 0xE4://设置主机恢复出厂设置
-                        Log.i("TAG", "------设置主机恢复出厂设置, " + type);
-                        break;
-                    case 0xEA://设置主机进入注册状态
-                        Log.i("TAG", "------设置主机进入注册状态, " + type);
-                        break;
-                    case 0xEB://设置主机退出注册状态
-                        Log.i("TAG", "------设置主机退出注册状态, " + type);
-                        break;
-                    case 0xEC://注册设备
-                        Log.i("TAG", "------注册设备, " + type);
-                        break;
-                    case 0xE3://获取注册设备数量
-                        Log.i("TAG", "------获取注册设备数量, " + type);
-                        break;
-                    case 0xE2://获取设备ID及状态
-                        Log.i("TAG", "------获取设备ID及状态, " + type);
-                        break;
-                    case 0xE1://清除注册表
-                        Log.i("TAG", "------清除注册表, " + type);
-                        break;
-                }
-            }
-        } else {
-            if (SHOW_DEBUG) {
-                Log.d("TAG", "read len : 0 ");
-            }
-            etRead.post(new Runnable() {
-                @Override
-                public void run() {
-                    etRead.setText("empty");
-                }
-            });
-            return;
-        }
-        try {
-            Thread.sleep(90);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        Log.d("TAG", "Leave readDataFromSerial");
-    }
-
     private void openUsbSerial() {
         Log.d("TAG", "Enter  openUsbSerial");
         if (mSerial == null) {
@@ -575,17 +481,18 @@ public class MainActivity extends AppCompatActivity {
                             } else if ("EA".equals(type)) {
                                 Log.i("TAG", "------设置主机进入注册状态, " + type);
                                 int msg = -1;
-                                for (int i = 0; i < seatList.size(); i++) {
+                                for (int i = 0; i < seatList.size(); i++) {//检查该指令的座位是否已注册，已注册改变座位状态
                                     if (seatList.get(i).getDeviceId().length() >=6 &&
                                             seatList.get(i).equals(sbHex.toString().substring(22, 28))){
                                         msg = i;
                                     }
                                 }
-                                if (msg == -1) {
-                                    DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
-                                    deviceInfoBean.setDeviceId(sbHex.toString().substring(22, 28));
-                                    seatList.add(deviceInfoBean);
-                                    msg = seatList.size() - 1;
+                                if (msg == -1) {//如果未注册，注册该座位，并保存信息
+                                    if (clickPosition != -1) {
+                                        seatList.get(clickPosition).setDeviceId(sbHex.toString().substring(22, 28));
+                                        DeviceInfoData.saveDeviceInfo(seatList);
+                                        msg = seatList.size() - 1;
+                                    }
                                 }
                                 handler.sendEmptyMessage(msg);
                             } else if ("EB".equals(type)) {
@@ -642,6 +549,105 @@ public class MainActivity extends AppCompatActivity {
         Log.d("TAG", "Leave readDataFromSerial");
     }
 
+
+    private void readDataFromSerial() {
+
+        int len;
+        // byte[] rbuf = new byte[4096];
+        byte[] rbuf = new byte[20];
+        StringBuffer sbHex = new StringBuffer();
+
+        Log.d("TAG", "Enter readDataFromSerial");
+
+        if (null == mSerial)
+            return;
+
+        if (!mSerial.isConnected())
+            return;
+
+        len = mSerial.read(rbuf);
+        if (len < 0) {
+            Log.d("TAG", "Fail to bulkTransfer(read data)");
+            return;
+        }
+
+        if (len > 0) {
+            if (SHOW_DEBUG) {
+                Log.d("TAG", "read len : " + len);
+            }
+            //rbuf[len] = 0;
+            for (int j = 0; j < len; j++) {
+                //String temp=Integer.toHexString(rbuf[j]&0x000000FF);
+                //Log.i(TAG, "str_rbuf["+j+"]="+temp);
+                //int decimal = Integer.parseInt(temp, 16);
+                //Log.i(TAG, "dec["+j+"]="+decimal);
+                //sbHex.append((char)decimal);
+                //sbHex.append(temp);
+//                sbHex.append((char) (rbuf[j]&0x000000FF));
+                sbHex.append(rbuf[j]);
+            }
+
+            byte[] rb = new byte[len];
+            for (int i = 0; i < len; i++) {
+                rb[i] = rbuf[i];
+            }
+
+            String r = ZhuanHuanUtils.byte2HexStr(rb);
+            Log.i("TAG", "------rb, " + r);
+            etRead.post(new Runnable() {
+                @Override
+                public void run() {
+                    etRead.setText("empty");
+                }
+            });
+//            Toast.makeText(this, "len="+len, Toast.LENGTH_SHORT).show();
+
+            if (len > 8) {
+                char type = (char) (rbuf[8] & 0x000000FF);
+                Log.i("TAG", "------type, " + type);
+                switch (type) {
+                    case 0xE4://设置主机恢复出厂设置
+                        Log.i("TAG", "------设置主机恢复出厂设置, " + type);
+                        break;
+                    case 0xEA://设置主机进入注册状态
+                        Log.i("TAG", "------设置主机进入注册状态, " + type);
+                        break;
+                    case 0xEB://设置主机退出注册状态
+                        Log.i("TAG", "------设置主机退出注册状态, " + type);
+                        break;
+                    case 0xEC://注册设备
+                        Log.i("TAG", "------注册设备, " + type);
+                        break;
+                    case 0xE3://获取注册设备数量
+                        Log.i("TAG", "------获取注册设备数量, " + type);
+                        break;
+                    case 0xE2://获取设备ID及状态
+                        Log.i("TAG", "------获取设备ID及状态, " + type);
+                        break;
+                    case 0xE1://清除注册表
+                        Log.i("TAG", "------清除注册表, " + type);
+                        break;
+                }
+            }
+        } else {
+            if (SHOW_DEBUG) {
+                Log.d("TAG", "read len : 0 ");
+            }
+            etRead.post(new Runnable() {
+                @Override
+                public void run() {
+                    etRead.setText("empty");
+                }
+            });
+            return;
+        }
+        try {
+            Thread.sleep(90);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Log.d("TAG", "Leave readDataFromSerial");
+    }
 
     private long exitTime = 0;
 
