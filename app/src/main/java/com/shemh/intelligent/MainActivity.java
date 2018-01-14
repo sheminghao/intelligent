@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
         }else {
             for (int i = 0; i < num; i++) {
                 DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
-                deviceInfoBean.setDeviceId(i + "");
+                deviceInfoBean.setDeviceId("");
                 seatList.add(deviceInfoBean);
             }
             DeviceInfoData.saveDeviceInfo(seatList);
@@ -122,15 +122,21 @@ public class MainActivity extends AppCompatActivity {
                 }
                 seatAdapter.setDataList(seatList);
                 DeviceInfoData.saveDeviceInfo(seatList);
+                seatAdapter.notifyDataSetChanged();
             }
         });
 
         seatAdapter.setOnItemClickListener(new SeatAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(int pos) {
+                Log.i("TAG", "-------点击注册id,," + seatAdapter.getDataList().get(pos).getDeviceId());
                 if (TextUtils.isEmpty(seatAdapter.getDataList().get(pos).getDeviceId())) {
+                    Log.i("TAG", "-------点击注册，" + pos);
+                    ToastUtils.showToast("注册");
                     clickPosition = pos;
                     writeDataToSerial1(ParseDataUtils.zhuceZhuangtai);
+                }else {
+                    ToastUtils.showToast("该座位已注册");
                 }
             }
         });
@@ -346,7 +352,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, "Write length: " + writeByte.length + " bytes", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "Write length: " + writeByte.length + " bytes", Toast.LENGTH_SHORT).show();
 
         Log.d("TAG", "Leave writeDataToSerial");
     }
@@ -464,9 +470,6 @@ public class MainActivity extends AppCompatActivity {
                 if (chuankou.size() >= 2) {
 //                    Log.d("TAG", "chuankou.get(1) : " + Integer.parseInt(chuankou.get(1), 16));
                     int singleCount = Integer.parseInt(chuankou.get(1), 16);
-                    if ("EA".equals(chuankou.get(8))){
-                        singleCount = singleCount - 1;
-                    }
                     if (singleCount + 2 == chuankou.size()) {
                         StringBuffer sbHex = new StringBuffer();
                         for (int i = 0; i < chuankou.size(); i++) {
@@ -491,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
                                     if (clickPosition != -1) {
                                         seatList.get(clickPosition).setDeviceId(sbHex.toString().substring(22, 28));
                                         DeviceInfoData.saveDeviceInfo(seatList);
-                                        msg = seatList.size() - 1;
+                                        msg = clickPosition;
                                     }
                                 }
                                 handler.sendEmptyMessage(msg);
