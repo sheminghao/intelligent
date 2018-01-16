@@ -28,6 +28,7 @@ public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
     @Override
     public void onBindItemHolder(SuperViewHolder holder, final int position) {
         ImageView imgSeat = holder.getView(R.id.img_seat);
+        ImageView imgHujiao = holder.getView(R.id.img_hujiao);
         TextView tvSeatNum = holder.getView(R.id.tv_seat_num);
         TextView tvRegisterState = holder.getView(R.id.tv_register_state);
         if (TextUtils.isEmpty(mDataList.get(position).getDeviceId())){
@@ -49,9 +50,20 @@ public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
 
         if (!TextUtils.isEmpty(mDataList.get(position).getSeatState())){
             if ("00".equals(mDataList.get(position).getSeatState())){
-                imgSeat.setImageResource(R.mipmap.zuowei_lv);
+                if ("01".equals(mDataList.get(position).getAnquandai())){
+                    imgSeat.setImageResource(R.mipmap.zuowei_lan);
+                }else {
+                    imgSeat.setImageResource(R.mipmap.zuowei_lv);
+                }
             }else if ("01".equals(mDataList.get(position).getSeatState())){
                 imgSeat.setImageResource(R.mipmap.zuowei_hong);
+            }
+        }
+        if (!TextUtils.isEmpty(mDataList.get(position).getHujiaoSiji())){
+            if ("00".equals(mDataList.get(position).getHujiaoSiji())){
+                imgHujiao.setVisibility(View.INVISIBLE);
+            }else if ("01".equals(mDataList.get(position).getHujiaoSiji())){
+                imgHujiao.setVisibility(View.VISIBLE);
             }
         }
     }

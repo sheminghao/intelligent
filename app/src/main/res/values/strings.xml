@@ -13,5 +13,8 @@
     <string name="open">Open</string>
     <string name="read">Read</string>
     <string name="write">Write</string>
+    <string name="register">Register</string>
+    <string name="the_seat_is_registered">The seat is registered</string>
+    <string name="nobody">Nobody</string>
 
 </resources>

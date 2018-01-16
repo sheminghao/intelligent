@@ -23,9 +23,9 @@ import com.shemh.intelligent.adapter.SeatAdapter;
 import com.shemh.intelligent.bean.DeviceInfoBean;
 import com.shemh.intelligent.utils.DeviceInfoData;
 import com.shemh.intelligent.utils.ParseDataUtils;
-import com.shemh.intelligent.utils.PreferencesUtils;
 import com.shemh.intelligent.utils.ToastUtils;
 import com.shemh.intelligent.utils.ZhuanHuanUtils;
+import com.shemh.intelligent.view.JingbaoDialog;
 import com.shemh.intelligent.view.SeatTable;
 
 import java.io.IOException;
@@ -68,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private int clickPosition = -1;
 
+    private JingbaoDialog jingbaoDialog;
+
     private static final boolean SHOW_DEBUG = true;
 
     private static final String ACTION_USB_PERMISSION = "com.shemh.intelligent.USB_PERMISSION";
@@ -93,12 +95,15 @@ public class MainActivity extends AppCompatActivity {
         recyclerview.setLayoutManager(gridLayoutManager);
         recyclerview.setAdapter(seatAdapter);
 
+        jingbaoDialog = new JingbaoDialog(this, R.style.Dialog);
+
         initSpinner();
 
         if(null != DeviceInfoData.getDeviceInfo()){
             seatList = DeviceInfoData.getDeviceInfo().getDeviceInfoList();
             row = DeviceInfoData.getDeviceInfo().getRow();
             num = DeviceInfoData.getDeviceInfo().getNum();
+            gridLayoutManager.setSpanCount(row);
         }else {
             for (int i = 0; i < num; i++) {
                 DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
@@ -108,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
             DeviceInfoData.saveDeviceInfo(seatList);
         }
         seatAdapter.setDataList(seatList);
+        Log.i("TAG", "-------row : " + row + " ,, num : " + num);
 
         TextView tvQueding = (TextView) findViewById(R.id.tv_queding);
         tvQueding.setOnClickListener(new View.OnClickListener() {
@@ -121,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                     seatList.add(deviceInfoBean);
                 }
                 seatAdapter.setDataList(seatList);
-                DeviceInfoData.saveDeviceInfo(seatList);
+                DeviceInfoData.saveDeviceInfo(seatList, row, num);
                 seatAdapter.notifyDataSetChanged();
             }
         });
@@ -132,11 +138,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("TAG", "-------点击注册id,," + seatAdapter.getDataList().get(pos).getDeviceId());
                 if (TextUtils.isEmpty(seatAdapter.getDataList().get(pos).getDeviceId())) {
                     Log.i("TAG", "-------点击注册，" + pos);
-                    ToastUtils.showToast("注册");
+                    ToastUtils.showToast(R.string.register);
                     clickPosition = pos;
                     writeDataToSerial1(ParseDataUtils.zhuceZhuangtai);
                 }else {
-                    ToastUtils.showToast("该座位已注册");
+                    ToastUtils.showToast(R.string.the_seat_is_registered);
                 }
             }
         });
@@ -170,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @OnClick({R.id.btn_open, R.id.btn_read, R.id.btn_write})
+    @OnClick({R.id.btn_open, R.id.btn_read, R.id.btn_write, R.id.btn_jingbao})
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_open:
@@ -181,6 +187,17 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.btn_write:
                 writeDataToSerial();
+                break;
+            case R.id.btn_jingbao:
+                if (!jingbaoDialog.isShowing()){
+                    jingbaoDialog.show();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                           jingbaoDialog.dismiss();
+                        }
+                    }, 5000);
+                }
                 break;
         }
     }
@@ -415,6 +432,19 @@ public class MainActivity extends AppCompatActivity {
             super.handleMessage(msg);
             seatAdapter.setDataList(seatList);
             seatAdapter.notifyItemChanged(msg.what);
+            if (!TextUtils.isEmpty(seatList.get(msg.what).getQuancheJinji())){
+                if ("01".equals(seatList.get(msg.what).getQuancheJinji())){
+                    if (!jingbaoDialog.isShowing()){
+                        jingbaoDialog.show();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                jingbaoDialog.dismiss();
+                            }
+                        }, 5000);
+                    }
+                }
+            }
         }
     };
 
@@ -511,12 +541,15 @@ public class MainActivity extends AppCompatActivity {
                                 int msg = 0;
                                 for (int i = 0; i < seatList.size(); i++) {
                                     if (seatList.get(i).getDeviceId().length() >=6 &&
-                                            seatList.get(i).getDeviceId().equals(sbHex.toString().substring(10, 16))){
-                                        Log.i("TAG", "------sbHex.toString().substring(10, 16)" + sbHex.toString().substring(10, 16));
-                                        Log.i("TAG", "------DeviceId" + seatList.get(i).getDeviceId());
-                                        Log.i("TAG", "------sbHex.toString().substring(20, 22)" + sbHex.toString().substring(20, 22));
-                                        Log.i("TAG", "------i" + i);
+                                        seatList.get(i).getDeviceId().equals(sbHex.toString().substring(10, 16))){
+//                                        Log.i("TAG", "------sbHex.toString().substring(10, 16)" + sbHex.toString().substring(10, 16));
+//                                        Log.i("TAG", "------DeviceId" + seatList.get(i).getDeviceId());
+//                                        Log.i("TAG", "------sbHex.toString().substring(20, 22)" + sbHex.toString().substring(20, 22));
+//                                        Log.i("TAG", "------i" + i);
                                         seatList.get(i).setSeatState(sbHex.toString().substring(20, 22));
+                                        seatList.get(i).setAnquandai(sbHex.toString().substring(18, 20));
+                                        seatList.get(i).setQuancheJinji(sbHex.toString().substring(22, 24));
+                                        seatList.get(i).setHujiaoSiji(sbHex.toString().substring(24, 26));
                                         msg = i;
                                     }
                                 }

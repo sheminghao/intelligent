@@ -31,6 +31,16 @@ public class DeviceInfoData {
         }
     }
 
+    public static void saveDeviceInfo(List<DeviceInfoBean> obj, int row, int num){
+        AllDeviceInfoBean allDeviceInfoBean = new AllDeviceInfoBean();
+        allDeviceInfoBean.setDeviceInfoList(obj);
+        allDeviceInfoBean.setRow(row);
+        allDeviceInfoBean.setNum(num);
+        if (null != allDeviceInfoBean) {
+            PreferencesUtils.putString(APP.getInstance(), "AllDeviceInfoBean", new Gson().toJson(allDeviceInfoBean));
+        }
+    }
+
     public static void clearDeviceInfo(){
         PreferencesUtils.removeValue(APP.getInstance(), "AllDeviceInfoBean");
     }

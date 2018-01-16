@@ -10,6 +10,36 @@ public class DeviceInfoBean {
 
     String seatState;
 
+    String anquandai;
+
+    String quancheJinji;
+
+    String hujiaoSiji;
+
+    public String getAnquandai() {
+        return anquandai;
+    }
+
+    public void setAnquandai(String anquandai) {
+        this.anquandai = anquandai;
+    }
+
+    public String getQuancheJinji() {
+        return quancheJinji;
+    }
+
+    public void setQuancheJinji(String quancheJinji) {
+        this.quancheJinji = quancheJinji;
+    }
+
+    public String getHujiaoSiji() {
+        return hujiaoSiji;
+    }
+
+    public void setHujiaoSiji(String hujiaoSiji) {
+        this.hujiaoSiji = hujiaoSiji;
+    }
+
     public String getDeviceId() {
         return deviceId;
     }
