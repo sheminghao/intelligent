@@ -178,6 +178,7 @@
         android:id="@+id/btn_jingbao"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="警报"/>
+        android:text="警报"
+        android:visibility="gone"/>
 
 </LinearLayout>

@@ -1,7 +1,10 @@
 package com.shemh.intelligent.adapter;
 
+import android.bluetooth.BluetoothClass;
 import android.content.Context;
+import android.os.Handler;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -9,6 +12,7 @@ import android.widget.TextView;
 
 import com.shemh.intelligent.R;
 import com.shemh.intelligent.bean.DeviceInfoBean;
+import com.shemh.intelligent.utils.DeviceInfoData;
 
 /**
  * Created by shemh on 2017/12/7.
@@ -25,10 +29,12 @@ public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
         return R.layout.item_seat;
     }
 
+    Handler handler = new Handler();
+
     @Override
     public void onBindItemHolder(SuperViewHolder holder, final int position) {
         ImageView imgSeat = holder.getView(R.id.img_seat);
-        ImageView imgHujiao = holder.getView(R.id.img_hujiao);
+        final ImageView imgHujiao = holder.getView(R.id.img_hujiao);
         TextView tvSeatNum = holder.getView(R.id.tv_seat_num);
         TextView tvRegisterState = holder.getView(R.id.tv_register_state);
         if (TextUtils.isEmpty(mDataList.get(position).getDeviceId())){
@@ -59,11 +65,24 @@ public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
                 imgSeat.setImageResource(R.mipmap.zuowei_hong);
             }
         }
+
+        imgHujiao.setTag(position);
+        Log.i("TAG", "------kjkk"+((int)imgHujiao.getTag()) + ",, " + position);
         if (!TextUtils.isEmpty(mDataList.get(position).getHujiaoSiji())){
             if ("00".equals(mDataList.get(position).getHujiaoSiji())){
                 imgHujiao.setVisibility(View.INVISIBLE);
             }else if ("01".equals(mDataList.get(position).getHujiaoSiji())){
-                imgHujiao.setVisibility(View.VISIBLE);
+                if (((int)imgHujiao.getTag()) == position) {
+                    imgHujiao.setVisibility(View.VISIBLE);
+                    mDataList.get(position).setHujiaoSiji("00");
+                    DeviceInfoData.saveDeviceInfo(mDataList);
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            imgHujiao.setVisibility(View.INVISIBLE);
+                        }
+                    }, 5000);
+                }
             }
         }
     }

@@ -103,7 +103,9 @@ public class MainActivity extends AppCompatActivity {
             seatList = DeviceInfoData.getDeviceInfo().getDeviceInfoList();
             row = DeviceInfoData.getDeviceInfo().getRow();
             num = DeviceInfoData.getDeviceInfo().getNum();
-            gridLayoutManager.setSpanCount(row);
+            if(row != 0) {
+                gridLayoutManager.setSpanCount(row);
+            }
         }else {
             for (int i = 0; i < num; i++) {
                 DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
@@ -434,6 +436,8 @@ public class MainActivity extends AppCompatActivity {
             seatAdapter.notifyItemChanged(msg.what);
             if (!TextUtils.isEmpty(seatList.get(msg.what).getQuancheJinji())){
                 if ("01".equals(seatList.get(msg.what).getQuancheJinji())){
+                    seatList.get(msg.what).setQuancheJinji("00");
+                    DeviceInfoData.saveDeviceInfo(seatList);
                     if (!jingbaoDialog.isShowing()){
                         jingbaoDialog.show();
                         handler.postDelayed(new Runnable() {
@@ -539,13 +543,17 @@ public class MainActivity extends AppCompatActivity {
                             }else if ("A1".equals(type)) {
                                 Log.i("TAG", "------触发开关上报数据状态（开关发送）, " + type);
                                 int msg = 0;
+                                seatList = DeviceInfoData.getDeviceInfo().getDeviceInfoList();
                                 for (int i = 0; i < seatList.size(); i++) {
                                     if (seatList.get(i).getDeviceId().length() >=6 &&
                                         seatList.get(i).getDeviceId().equals(sbHex.toString().substring(10, 16))){
-//                                        Log.i("TAG", "------sbHex.toString().substring(10, 16)" + sbHex.toString().substring(10, 16));
-//                                        Log.i("TAG", "------DeviceId" + seatList.get(i).getDeviceId());
-//                                        Log.i("TAG", "------sbHex.toString().substring(20, 22)" + sbHex.toString().substring(20, 22));
-//                                        Log.i("TAG", "------i" + i);
+                                        Log.i("TAG", "------sbHex.toString().substring(10, 16)" + sbHex.toString().substring(10, 16));
+                                        Log.i("TAG", "------DeviceId" + seatList.get(i).getDeviceId());
+                                        Log.i("TAG", "------sbHex.toString().substring(18, 20)" + sbHex.toString().substring(18, 20));
+                                        Log.i("TAG", "------sbHex.toString().substring(20, 22)" + sbHex.toString().substring(20, 22));
+                                        Log.i("TAG", "------sbHex.toString().substring(22, 24)" + sbHex.toString().substring(22, 24));
+                                        Log.i("TAG", "------sbHex.toString().substring(24, 26)" + sbHex.toString().substring(24, 26));
+                                        Log.i("TAG", "------i" + i);
                                         seatList.get(i).setSeatState(sbHex.toString().substring(20, 22));
                                         seatList.get(i).setAnquandai(sbHex.toString().substring(18, 20));
                                         seatList.get(i).setQuancheJinji(sbHex.toString().substring(22, 24));
