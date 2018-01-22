@@ -121,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
         tvQueding.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                writeDataToSerial1(ParseDataUtils.qingchuZhucebiao);
                 gridLayoutManager.setSpanCount(row);
                 seatList.clear();
                 for (int i = 0; i < num; i++) {
