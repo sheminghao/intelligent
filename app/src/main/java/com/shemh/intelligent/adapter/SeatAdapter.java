@@ -1,6 +1,5 @@
 package com.shemh.intelligent.adapter;
 
-import android.bluetooth.BluetoothClass;
 import android.content.Context;
 import android.os.Handler;
 import android.text.TextUtils;
@@ -56,10 +55,10 @@ public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
 
         if (!TextUtils.isEmpty(mDataList.get(position).getSeatState())){
             if ("01".equals(mDataList.get(position).getSeatState())){
+                imgSeat.setImageResource(R.mipmap.zuowei_lv);
                 if ("01".equals(mDataList.get(position).getAnquandai())){
                     imgSeat.setImageResource(R.mipmap.zuowei_lan);
                 }else {
-                    imgSeat.setImageResource(R.mipmap.zuowei_lv);
                 }
             }else if ("00".equals(mDataList.get(position).getSeatState())){
                 imgSeat.setImageResource(R.mipmap.zuowei_hong);

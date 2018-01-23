@@ -110,6 +110,10 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < num; i++) {
                 DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
                 deviceInfoBean.setDeviceId("");
+                deviceInfoBean.setHujiaoSiji("");
+                deviceInfoBean.setQuancheJinji("");
+                deviceInfoBean.setAnquandai("");
+                deviceInfoBean.setSeatState("");
                 seatList.add(deviceInfoBean);
             }
             DeviceInfoData.saveDeviceInfo(seatList);
@@ -124,9 +128,14 @@ public class MainActivity extends AppCompatActivity {
                 writeDataToSerial1(ParseDataUtils.qingchuZhucebiao);
                 gridLayoutManager.setSpanCount(row);
                 seatList.clear();
+                DeviceInfoData.clearDeviceInfo();
                 for (int i = 0; i < num; i++) {
                     DeviceInfoBean deviceInfoBean = new DeviceInfoBean();
                     deviceInfoBean.setDeviceId("");
+                    deviceInfoBean.setHujiaoSiji("");
+                    deviceInfoBean.setQuancheJinji("");
+                    deviceInfoBean.setAnquandai("");
+                    deviceInfoBean.setSeatState("");
                     seatList.add(deviceInfoBean);
                 }
                 seatAdapter.setDataList(seatList);
