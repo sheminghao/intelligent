@@ -20,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.shemh.intelligent.adapter.SeatAdapter;
+import com.shemh.intelligent.bean.AllDeviceInfoBean;
 import com.shemh.intelligent.bean.DeviceInfoBean;
 import com.shemh.intelligent.utils.DeviceInfoData;
 import com.shemh.intelligent.utils.ParseDataUtils;
@@ -141,6 +142,16 @@ public class MainActivity extends AppCompatActivity {
                 seatAdapter.setDataList(seatList);
                 DeviceInfoData.saveDeviceInfo(seatList, row, num);
                 seatAdapter.notifyDataSetChanged();
+
+//                AllDeviceInfoBean allDeviceInfoBean = DeviceInfoData.getDeviceInfo();
+//                Log.i("TAG", "------DeviceInfoList()," + allDeviceInfoBean.getDeviceInfoList().size());
+//                for (int i = 0; i < allDeviceInfoBean.getDeviceInfoList().size(); i++) {
+//                    Log.i("TAG", "------DeviceId," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getDeviceId());
+//                    Log.i("TAG", "------Anquandai," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getAnquandai());
+//                    Log.i("TAG", "------HujiaoSiji," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getHujiaoSiji());
+//                    Log.i("TAG", "------QuancheJinji," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getQuancheJinji());
+//                    Log.i("TAG", "------SeatState," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getSeatState());
+//                }
             }
         });
 
