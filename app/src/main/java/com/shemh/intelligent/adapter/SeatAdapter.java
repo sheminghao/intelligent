@@ -53,20 +53,29 @@ public class SeatAdapter extends ListBaseAdapter<DeviceInfoBean> {
             }
         });
 
+        imgSeat.setTag(position);
         if (!TextUtils.isEmpty(mDataList.get(position).getSeatState())){
             if ("01".equals(mDataList.get(position).getSeatState())){
-                imgSeat.setImageResource(R.mipmap.zuowei_lv);
-                if ("01".equals(mDataList.get(position).getAnquandai())){
-                    imgSeat.setImageResource(R.mipmap.zuowei_lan);
-                }else {
+                if (((int)imgSeat.getTag()) == position) {
+                    imgSeat.setImageResource(R.mipmap.zuowei_lv);
+                    if ("01".equals(mDataList.get(position).getAnquandai())) {
+                        imgSeat.setImageResource(R.mipmap.zuowei_lan);
+                    } else {
+                    }
                 }
             }else if ("00".equals(mDataList.get(position).getSeatState())){
+                if (((int)imgSeat.getTag()) == position) {
+                    imgSeat.setImageResource(R.mipmap.zuowei_hong);
+                }
+            }
+        }else {
+            if (((int)imgSeat.getTag()) == position) {
                 imgSeat.setImageResource(R.mipmap.zuowei_hong);
             }
         }
 
         imgHujiao.setTag(position);
-        Log.i("TAG", "------kjkk"+((int)imgHujiao.getTag()) + ",, " + position);
+//        Log.i("TAG", "------kjkk"+((int)imgHujiao.getTag()) + ",, " + position);
         if (!TextUtils.isEmpty(mDataList.get(position).getHujiaoSiji())){
             if ("00".equals(mDataList.get(position).getHujiaoSiji())){
                 imgHujiao.setVisibility(View.INVISIBLE);

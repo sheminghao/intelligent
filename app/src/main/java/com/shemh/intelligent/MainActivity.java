@@ -142,16 +142,6 @@ public class MainActivity extends AppCompatActivity {
                 seatAdapter.setDataList(seatList);
                 DeviceInfoData.saveDeviceInfo(seatList, row, num);
                 seatAdapter.notifyDataSetChanged();
-
-//                AllDeviceInfoBean allDeviceInfoBean = DeviceInfoData.getDeviceInfo();
-//                Log.i("TAG", "------DeviceInfoList()," + allDeviceInfoBean.getDeviceInfoList().size());
-//                for (int i = 0; i < allDeviceInfoBean.getDeviceInfoList().size(); i++) {
-//                    Log.i("TAG", "------DeviceId," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getDeviceId());
-//                    Log.i("TAG", "------Anquandai," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getAnquandai());
-//                    Log.i("TAG", "------HujiaoSiji," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getHujiaoSiji());
-//                    Log.i("TAG", "------QuancheJinji," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getQuancheJinji());
-//                    Log.i("TAG", "------SeatState," + i +"=="+ allDeviceInfoBean.getDeviceInfoList().get(i).getSeatState());
-//                }
             }
         });
 
@@ -159,14 +149,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(int pos) {
                 Log.i("TAG", "-------点击注册id,," + seatAdapter.getDataList().get(pos).getDeviceId());
-                if (TextUtils.isEmpty(seatAdapter.getDataList().get(pos).getDeviceId())) {
+//                if (TextUtils.isEmpty(seatAdapter.getDataList().get(pos).getDeviceId())) {
                     Log.i("TAG", "-------点击注册，" + pos);
                     ToastUtils.showToast(R.string.register);
                     clickPosition = pos;
                     writeDataToSerial1(ParseDataUtils.zhuceZhuangtai);
-                }else {
-                    ToastUtils.showToast(R.string.the_seat_is_registered);
-                }
+//                }else {
+//                    ToastUtils.showToast(R.string.the_seat_is_registered);
+//                }
             }
         });
 
@@ -548,6 +538,8 @@ public class MainActivity extends AppCompatActivity {
                                 if (msg == -1) {//如果未注册，注册该座位，并保存信息
                                     if (clickPosition != -1) {
                                         seatList.get(clickPosition).setDeviceId(sbHex.toString().substring(22, 28));
+                                        Log.i("TAG", "------注册返回指令, " + sbHex.toString());
+                                        Log.i("TAG", "------注册返回指令, " + sbHex.toString().substring(22, 28));
                                         DeviceInfoData.saveDeviceInfo(seatList);
                                         msg = clickPosition;
                                     }
@@ -565,6 +557,8 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i("TAG", "------触发开关上报数据状态（开关发送）, " + type);
                                 int msg = 0;
                                 seatList = DeviceInfoData.getDeviceInfo().getDeviceInfoList();
+                                Log.i("TAG", "------seatList, id," + seatList.get(0).getDeviceId());
+                                Log.i("TAG", "------sbHex.toString().substring(10, 16)," + sbHex.toString().substring(10, 16));
                                 for (int i = 0; i < seatList.size(); i++) {
                                     if (seatList.get(i).getDeviceId().length() >=6 &&
                                         seatList.get(i).getDeviceId().equals(sbHex.toString().substring(10, 16))){
