@@ -444,7 +444,7 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             seatAdapter.setDataList(seatList);
-            seatAdapter.notifyItemChanged(msg.what);
+//            seatAdapter.notifyItemChanged(msg.what);
             if (!TextUtils.isEmpty(seatList.get(msg.what).getQuancheJinji())){
                 if ("01".equals(seatList.get(msg.what).getQuancheJinji())){
                     seatList.get(msg.what).setQuancheJinji("00");
